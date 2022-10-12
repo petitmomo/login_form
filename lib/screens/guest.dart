@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../model/UserModel.dart';
 import '../services/UserServices.dart';
+import '../services/commonService.dart';
 import 'dashboard/home.dart';
 import 'guest/auth.dart';
 import 'guest/password.dart';
@@ -15,6 +16,7 @@ class GuestScreen extends StatefulWidget {
 }
 
 class _GuestScreenState extends State<GuestScreen> {
+  CommonService _commonService = CommonService();
   UserService _userService = UserService();
 
   List<Widget> widgets = [];
@@ -28,46 +30,58 @@ class _GuestScreenState extends State<GuestScreen> {
     // TODO: implement initState
     super.initState();
 
-    widgets.addAll([
-      AuthScreen(
-        onChangeSteps: (index, value) => setState(() {
-          indexSelected = index;
-          _email = value;
-          _password = value;
-        }),
-      ),
-      TermScreen(
-          onChangeSteps: (index) => setState(() => indexSelected = index)),
-      PasswordScreen(
-        onChangeSteps: (index, value) => setState(() {
-          if (index != null) {
-            indexSelected = index;
-          }
+    _commonService.terms.then((terms) => setState(
+          () => widgets.addAll([
+            AuthScreen(
+              onChangeSteps: (index, value) => setState(() {
+                indexSelected = index;
+                _email = value;
+                _password = value;
+              }),
+            ),
+            TermScreen(
+                terms: terms,
+                onChangeSteps: (index) =>
+                    setState(() => indexSelected = index)),
+            PasswordScreen(
+              onChangeSteps: (index, value) => setState(() {
+                if (index != null) {
+                  indexSelected = index;
+                }
 
-          if (value != null) {
-            _userService
-                .auth(UserModel(
-              email: _email,
-              password: value,
-            ))
-                .then((value) {
-              if (value.uid != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
-                );
-              }
-            });
-          }
-        }),
-      ),
-    ]);
+                if (value != null) {
+                  _userService
+                      .auth(UserModel(
+                    email: _email,
+                    password: value,
+                  ))
+                      .then((value) {
+                    if (value.uid != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreen()),
+                      );
+                    }
+                  });
+                }
+              }),
+            ),
+          ]),
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: widgets.elementAt(indexSelected),
+      child: widgets.length == 0
+          ? SafeArea(
+              child: Scaffold(
+                body: Center(
+                  child: Text("Loading"),
+                ),
+              ),
+            )
+          : widgets.elementAt(indexSelected),
     );
   }
 }
